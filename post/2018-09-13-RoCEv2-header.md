@@ -1,8 +1,8 @@
 # Investigating the RoCE(v2) protocol 
 
 ## Index 
-1. [Introduction](#Introduction)
-2. [Measuring RDMA traffic on Mellanox NICs](#measuring-RDMA-traffic-on-Mellanox-NICs)
+1. [Introduction](#introduction)
+2. [Measuring RDMA traffic on Mellanox NICs](#measuring-rdma-traffic-on-mellanox-nics)
 3. [Reasoning about the RDMA traffic](#Reasoning-about-the-RDMA-traffic)
     - 3.1 [One outstanding request](#One-outstanding-request)
     - 3.2 [Multiple outstanding requests](#Multiple-outstanding-requests)
