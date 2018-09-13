@@ -229,3 +229,5 @@ That is it folks. In conclusion:
   For anything else, it can vary between the range of 1 - 2x. 
   - RoCE v2 has a large header, so be careful when you measure small message bandwidths and efficiency. 
   - There is mysterious 4 bytes in the 0-length payload RoCE header, I don't know where it comes from. If you know, let me know :) 
+
+Thanks Jonas Pfefferle for sitting with me to investigate this. 
