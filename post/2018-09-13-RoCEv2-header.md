@@ -207,7 +207,7 @@ byte packet size is 82 bytes.
    
    
 So from here we can also calculate the efficiency of the RoCE network. It uses IB MTU of 4096 bytes. So 
-if we calculate the Ethernet overheads as : 42 bytes (= 7 bytes (Preamble) + 1 byte (delimiter) + 
+if we calculate the [Ethernet overheads](https://en.wikipedia.org/wiki/Ethernet_frame#Structure) as : 42 bytes (= 7 bytes (Preamble) + 1 byte (delimiter) + 
 12 bytes (src+dst) + 2 bytes(Ethertype) + 4 bytes (VLAN) + 4 bytes (CRC) + 12 bytes (Interframe Gap, 
 YES this is also transmitted)). Then higher-level protocols include 20 bytes (IP) + 8 bytes (UDP) + 20 bytes 
 (IB + checksum) = 48 bytes. So for a given MTU size of 4096, we get 
