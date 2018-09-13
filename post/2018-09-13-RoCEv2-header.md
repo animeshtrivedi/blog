@@ -3,12 +3,12 @@
 ## Index 
 1. [Introduction](#introduction)
 2. [Measuring RDMA traffic on Mellanox NICs](#measuring-rdma-traffic-on-mellanox-nics)
-3. [Reasoning about the RDMA traffic](#Reasoning-about-the-RDMA-traffic)
-    - 3.1 [One outstanding request](#One-outstanding-request)
-    - 3.2 [Multiple outstanding requests](#Multiple-outstanding-requests)
-    - 3.3 [Bandwidth tests](#Bandwidth-tests)
-4. [Deciphering RoCE Header](#Deciphering-RoCE-Header)
-5. [Conclusion](#Conclusion)
+3. [Reasoning about the RDMA traffic](#reasoning-about-the-rdma-traffic)
+    - 3.1 [One outstanding request](#one-outstanding-request)
+    - 3.2 [Multiple outstanding requests](#multiple-outstanding-requests)
+    - 3.3 [Bandwidth tests](#bandwidth-tests)
+4. [Deciphering RoCE Header](#deciphering-roce-header)
+5. [Conclusion](#conclusion)
 
 ## Introduction 
 Benchmarking distributed systems is a hard job. I often need to ensure that the performance that 
@@ -198,8 +198,8 @@ https://community.mellanox.com/docs/DOC-1451 as
 
 ![RoCE v2 header](https://community.mellanox.com/servlet/JiveServlet/showImage/102-1451-29-84647/RoCE+frame+Format.png)
 
-So, here you can see that RoCE header sum in total to 70 bytes. There is still missing 4 bytes, I don't know
-where that comes from. 
+So, here you can see that RoCE header sum in total to 70 bytes. There is still missing 4 bytes, as we expected this
+size to be of 74 bytes. I don't know where that comes from. Anyone? 
 
 1 byte payload is backed as a 4 byte (to make it naturally aligned), and payload is incremented in the 
 step of 4 bytes. So, a zero byte packet size is 74 bytes, 1-4 bytes packet size is 78 bytes, and 5-8 
@@ -228,3 +228,4 @@ That is it folks. In conclusion:
   - for bi-drectional send/recv traffic: if you have 1 outstanding then operation and packet rate matches 1:2. 
   For anything else, it can vary between the range of 1 - 2x. 
   - RoCE v2 has a large header, so be careful when you measure small message bandwidths and efficiency. 
+  - There is mysterious 4 bytes in the 0-length payload RoCE header, I don't know where it comes from. If you know, let me know :) 
