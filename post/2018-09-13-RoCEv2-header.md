@@ -1,4 +1,4 @@
-# Investigating the RoCE(v2) protocol 
+# Investigating the RoCE (v2) protocol 
 
 ## Index 
 1. [Introduction](#introduction)
