@@ -12,23 +12,23 @@
 
 ## Introduction 
 Benchmarking distributed systems is a hard job. I often need to ensure that the performance that 
-I am measuring in my benchmark is sensible, and hence, I cross-check the performance with a 
+I am measuring in my benchmark is sensible, and hence I cross-check the performance with a 
 variety of independent tools. 
 
 
 Network benchmarking on on iWARP (RDMA over IP/TCP) use to be (slightly) easy because on our Chelsio 
-iWARP RDMA NICs, RDMA packets were accounted as any packet (offloaded or not) and would show up in 
+iWARP RDMA NICs, RDMA packets are accounted as any packet (offloaded or not) and would show up in 
 the counters of the NIC device in the kernel. So when one does `ifconfig`, the number of packet 
 transmitted, received, or number of bytes transmitted or received would show RDMA traffic as well. 
 But our new 100 Gbps Mellanox cards account offloaded and non-offloaded traffic differently. So the 
-first thing I need to find out was how to measure RDMA traffic on the Mellanox NICs? 
+first thing I need to find out is how to measure RDMA traffic on the Mellanox NICs? 
 
 ## Measuring RDMA traffic on Mellanox NICs 
 
-Mellanox has a good write up where to find counters for their RDMA traffic. It is available at 
+Mellanox has a good write-up where to find counters for their RDMA traffic. It is available at 
 https://community.mellanox.com/docs/DOC-2532. The document shows insane (!) amount of counters,
 as they allow unprecedented access into the working of a RNIC (more on this later). Today we 
-are interested in benign RDMA counters which are classified under the `vPORT` counters. The 
+are interested in benign RDMA counters which are classified under `vPORT` counters. The 
 interesting bit of counters are: 
 
 | Counter       |  Description|
@@ -62,16 +62,16 @@ TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)
 As a next step, I want to understand how these counters correlate to the application-level performance. 
 For example, if I see that my distributed hash-table look-up for 8 bytes is delivering 100M operations/sec,
 does this performance show up as 100M packets/sec on the wire? or 800M bytes/sec bandwidth? I use the 
-term *packets* for anything that RNIC transfers or receives and *operation* which is a application/benchmark
-level logical operation. For example, a 4MB RDMA read is one operation for an application that might 
+term *packet* for anything that an RNIC transfers or receives, and *operation* which is a application/benchmark-level logical operation. For example, a 4MB RDMA read is one operation for an application that might 
 result in 1000s of packets on the wire. 
 
-### One outstanding request 
+### One outstanding operation 
 
-We analyze the simple RDMA write operation where the traffic flows in one direction (and ack
+We analyze a simple RDMA write operation where the traffic flows in one direction (and ack
 and credits in the other). For a single outstanding 1-byte write request benchmark, 
 I get around 478K operations per second. While running the benchmark, the network profile 
-looks like (on the server side, the client is issuing RDMA operations):
+looks like (all network profiles are done on the server side, which for WRITE is receiving 
+the WRITE traffic):
 ```bash
 TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)   
 29857464    37562538   | 481571     481572     
@@ -79,7 +79,7 @@ TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)
 29901980    37618620   | 482290     482290
 [...]
 ```
-So, if you see the packet rate that is pretty close to the RDMA write operation rate. That make 
+So, if you see the RX packet rate that is pretty close to the RDMA write operation rate. That make 
 sense. There are RDMA write packet flowing in one direction and ack/credit packets going in the 
 other. But the bandwidth, seems odd. For 478K/sec, 1 byte operations, that bandwidth should be 
 around 478KB/sec. But the network counters show close to 29 MB (!). We will come back to this 
@@ -89,7 +89,7 @@ above, I can guess that the RDMA application should be getting close to ~480K op
 (The analysis looks the same for RDMA READ operations.)
 
 Lets have another look send/recv benchmark where in an RPC request/response style communication 
-pattern, where operations are issued **both** directions. Here is how a 1-byte request-response 
+pattern, operations are issued in **both** directions. Here is how a 1-byte request-response 
 traffic looks like: 
 
 ```bash
@@ -130,7 +130,7 @@ TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)
 153655406   152399782  | 2478309    2458061   
 [...]
 ```
-So, probably the throughput is around 2.4M/2 = 1.2K operations/sec? But in reality is it is 1.4M ops/sec, 
+So, probably the throughput is around 2.4M/2 = 1.2M operations/sec? But in reality is it is 1.4M ops/sec, 
 it is close but not exactly. If I push 32 in flight instead of 8, then 
 ```bash
 TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)   
@@ -140,7 +140,7 @@ TX(bytes)   RX(bytes)  | TX(pkts)   RX(pkts)
 [...]
 ```
 So, 6.1M/2 = 3.1M operations/sec? The benchmark level performance is 4M operations/sec. For 64 in-flight,  
-the packet rate is close to 10M packets/sec, but the benchmark performance is 6.1 operations/sec. You  
+the packet rate is close to 10M packets/sec, but the benchmark performance is 6.1M operations/sec. You  
 see the pattern. 
  
 The reason for this discrepancy is that in bi-directional traffic - the credit/ack packet can be piggy 
@@ -148,9 +148,10 @@ backed on the outgoing data packet. So, remember when there was only 1 outstandi
 exactly one response coming back from the server. But for low latency reasons, the RNIC cannot wait 
 indefinitely and hence must send a credit/ack packet back without waiting for the outgoing response. 
 Hence,  we saw 2x number of packets on the wire. But as we increase the number of in-flight packets, 
-the probability of finding an outgoing data packet increases. So in theory the packet rate can be 
-anywhere in between [ operationRate , 2 x operationRate]. And it become more difficult to predict 
-with accuracy what is the operation rate for a given packet rate. 
+the probability of finding an outgoing data packet (on which the NIC can piggy-back ACK) increases. 
+So in theory the packet rate can be anywhere in between [ operationRate , 2 x operationRate]. 
+And it become more difficult to predict with accuracy what is the operation rate for a given packet 
+rate. 
 
 ### Bandwidth tests 
 
@@ -220,6 +221,9 @@ For bandwidth tests when the payload size becomes larger than the protocols over
 bandwidth measurements will reflect the actual application performance. Any thing less than that, be careful 
 what you see on the wire. 
 
+The ACK packet size can be calcuated looking at the 1-byte TX WRITE traffic on the server side. It calculates to 62 bytes. 
+I do not have a break down of how the ACK packet looks like. 
+
 ## Conclusion  
 
 That is it folks. In conclusion: 
@@ -229,5 +233,6 @@ That is it folks. In conclusion:
   For anything else, it can vary between the range of 1 - 2x. 
   - RoCE v2 has a large header, so be careful when you measure small message bandwidths and efficiency. 
   - There is mysterious 4 bytes in the 0-length payload RoCE header, I don't know where it comes from. If you know, let me know :) 
+  - The RoCE v2 ACK packet is size is ~62 bytes, but I do not know how the packet looks like. 
 
 Thanks Jonas Pfefferle for sitting with me to investigate this. 
