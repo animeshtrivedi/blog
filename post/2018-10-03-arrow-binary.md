@@ -1,4 +1,4 @@
-# Investigating performance of Apache Arrow in-memory 
+# Investigating performance of Apache Arrow (Java) in-memory 
 
 This will be a multipart blog series where I am looking closely at the 
 performance of Apache Arrow. For the context, please refer to the 
