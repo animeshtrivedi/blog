@@ -246,7 +246,7 @@ benchmark, 3 runs, profiled for 3 seconds each.
 ```
 
 Almost 2x performance improvement in the cache hit rate. If we go further down to 1MB batch size, 
-the performance suffers massively, down from 31.32 Gbps to 11.19 Gbps. And looking at the profile, 
+the performance suffers massively, down from 28.82 Gbps to 11.19 Gbps. And looking at the profile, 
 we can second guess why: 
 **1MB run**
 ```concept
