@@ -1,4 +1,6 @@
-# Investigating performance of Apache Arrow (Java) in-memory 
+# Investigating performance of Apache Arrow (Java) in-memory (part 1)
+
+**Update:** [part 2](https://github.com/animeshtrivedi/blog/blob/master/post/2018-10-09-arrow-int.md)
 
 This will be a multipart blog series where I am looking closely at the 
 performance of Apache Arrow. For the context, please refer to the 
